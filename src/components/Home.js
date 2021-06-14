@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Button, TextField, Modal, Grid } from '@material-ui/core'
+import Alert from '@material-ui/lab/Alert';
 import { makeStyles } from '@material-ui/core/styles';
 import { DataGrid } from '@material-ui/data-grid';
 import {
@@ -19,6 +20,15 @@ const useStyles = makeStyles((theme) => ({
         boxShadow: theme.shadows[5],
         padding: theme.spacing(2, 4, 3),
     },
+    err: {
+        position: 'absolute',
+        width: 400,
+        height: 400,
+        backgroundColor: theme.palette.background.paper,
+        border: '2px solid #000',
+        boxShadow: theme.shadows[5],
+        padding: theme.spacing(2, 4, 3),
+    },
 }));
 
 const getModalStyle = () => {
@@ -33,6 +43,18 @@ const getModalStyle = () => {
         overflow: 'scroll',
         height: '100%',
         display: 'block'
+    };
+}
+
+const getModalStyleErr = () => {
+    const top = 50;
+    const left = 50;
+
+    return {
+        top: `${top}%`,
+        left: `${left}%`,
+        transform: `translate(-${top}%, -${left}%)`,
+        position: 'absolute'
     };
 }
 
@@ -58,15 +80,17 @@ const Home = () => {
         day: "",
         hours: "",
         target: "",
-        estimated: "",
-        rate: "",
+        estimated: 0,
+        rate: 0,
         note: ""
     });
     const [selectedDay, setSelectedDay] = useState(new Date());
     const [selectedTime, setSelectedTime] = useState(new Date());
+    const [err, setErr] = useState(false)
 
     const classes = useStyles();
     const [modalStyle] = useState(getModalStyle);
+    const [modalStyleErr] = useState(getModalStyleErr);
 
     const onHandleOpen = () => {
         setOpen(true)
@@ -74,6 +98,11 @@ const Home = () => {
 
     const onHandleClose = () => {
         setOpen(false)
+    }
+
+    const onHandleCloseErr = () => {
+
+        setErr(false)
     }
 
     const onHandleData = () => {
@@ -91,10 +120,14 @@ const Home = () => {
             dataTemp.day = hours + ':' + minutes
         }
 
-        const count = list.length
-        dataTemp.id = count + 1
-        setList([...list, dataTemp])
-        onHandleClose()
+        if( dataTemp.table === "" || dataTemp.task === "" || dataTemp.target === "" || dataTemp.note === ""){
+            setErr(true)
+        }else{
+            const count = list.length
+            dataTemp.id = count + 1
+            setList([...list, dataTemp])
+            onHandleClose()
+        }
     }
 
     const handleDayChange = (date) => {
@@ -111,6 +144,24 @@ const Home = () => {
 
         setDataTemp({ ...dataTemp, hours: hours + ':' + minutes })
     };
+
+    const onHandleEstimated = (e) => {
+        if (e >= 0 && e <= 100) {
+            setDataTemp({ ...dataTemp, estimated: e })
+            setErr(false)
+        } else {
+            setErr(true)
+        }
+    }
+
+    const onHandleRate = (e) => {
+        if (e >= 0 && e <= 100) {
+            setDataTemp({ ...dataTemp, rate: e })
+            setErr(false)
+        } else {
+            setErr(true)
+        }
+    }
 
     const body = (
         <div style={modalStyle} className={classes.paper}>
@@ -157,13 +208,13 @@ const Home = () => {
                         <TextField onChange={(e) => setDataTemp({ ...dataTemp, target: e.target.value })} id="target" label="Mục Tiêu" variant="outlined" />
                     </Grid>
                     <Grid item xs={12}>
-                        <TextField onChange={(e) => setDataTemp({ ...dataTemp, estimated: e.target.value })} id="estimated" label="Hoàn Thành Dự Kiến" variant="outlined" />
+                        <TextField value={dataTemp.estimated === 0 ? "" : dataTemp.estimated} onChange={(e) => onHandleEstimated(e.target.value)} id="estimated" label="Hoàn Thành Dự Kiến" variant="outlined" type="number" />
                     </Grid>
                     <Grid item xs={12}>
-                        <TextField onChange={(e) => setDataTemp({ ...dataTemp, rate: e.target.value })} id="rate" label="Hoàn Thành Thực Tế" variant="outlined" />
+                        <TextField value={dataTemp.rate === 0 ? "" : dataTemp.rate} onChange={(e) => onHandleRate(e.target.value)} id="rate" label="Hoàn Thành Thực Tế" variant="outlined" />
                     </Grid>
                     <Grid item xs={12}>
-                        <TextField onChange={(e) => setDataTemp({ ...dataTemp, note: e.target.value })} id="rate" label="Ghi Chú" variant="outlined" />
+                        <TextField onChange={(e) => setDataTemp({ ...dataTemp, note: e.target.value })} id="note" label="Ghi Chú" variant="outlined" />
                     </Grid>
                     <Grid item xs={12}>
                         <Button onClick={() => onHandleData()} variant="contained" color="secondary">
@@ -171,6 +222,20 @@ const Home = () => {
                         </Button>
                     </Grid>
                 </Grid>
+            </div>
+        </div>
+    )
+
+    const errModal = (
+        <div style={modalStyleErr} className={classes.err}>
+            <h2 id="simple-modal-title">Err</h2>
+            <div id="simple-modal-description">
+                <Alert variant="outlined" severity="error">
+                    <p>Có lỗi xảy ra!</p>
+                </Alert>
+                <Button onClick={() => onHandleCloseErr()} variant="contained" color="secondary">
+                    Close
+                </Button>
             </div>
         </div>
     )
@@ -193,9 +258,20 @@ const Home = () => {
                 {body}
             </Modal>
 
+
+            <Modal
+                open={err}
+                onClose={onHandleCloseErr}
+                aria-labelledby="simple-modal-title"
+                aria-describedby="simple-modal-description"
+            >
+                {errModal}
+            </Modal>
+
+
             <Grid item xs={12}>
                 <div style={{ height: 400, width: '100%' }}>
-                    <DataGrid rows={list} columns={columns} pageSize={5} checkboxSelection />
+                    <DataGrid rows={list} columns={columns} pageSize={5} checkboxSelection onRowSelected={e => console.log(e)} />
                 </div>
             </Grid>
 
