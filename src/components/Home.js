@@ -3,6 +3,8 @@ import { Button, TextField, Modal, Grid } from '@material-ui/core'
 import Alert from '@material-ui/lab/Alert';
 import { makeStyles } from '@material-ui/core/styles';
 import { DataGrid } from '@material-ui/data-grid';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import { FormControl, MenuItem, Select, InputLabel } from '@material-ui/core';
 import {
     MuiPickersUtilsProvider,
     KeyboardTimePicker,
@@ -28,6 +30,15 @@ const useStyles = makeStyles((theme) => ({
         border: '2px solid #000',
         boxShadow: theme.shadows[5],
         padding: theme.spacing(2, 4, 3),
+    },
+    input: {
+        "&:invalid": {
+            border: "red solid 2px"
+        }
+    },
+    formControl: {
+        margin: theme.spacing(1),
+        minWidth: 200,
     },
 }));
 
@@ -73,6 +84,8 @@ const columns = [
 const Home = () => {
 
     const [open, setOpen] = useState(false)
+    const [rate, setRate] = useState("")
+    const [estimated, setEstimated] = useState("")
     const [list, setList] = useState(data)
     const [dataTemp, setDataTemp] = useState({
         table: "",
@@ -84,6 +97,7 @@ const Home = () => {
         rate: 0,
         note: ""
     });
+
     const [selectedDay, setSelectedDay] = useState(new Date());
     const [selectedTime, setSelectedTime] = useState(new Date());
     const [err, setErr] = useState(false)
@@ -120,9 +134,17 @@ const Home = () => {
             dataTemp.day = hours + ':' + minutes
         }
 
-        if( dataTemp.table === "" || dataTemp.task === "" || dataTemp.target === "" || dataTemp.note === ""){
-            setErr(true)
-        }else{
+        // if (!isNaN(Number(dataTemp.rate))) {
+        //     onHandleEstimated(dataTemp.rate)
+        // }
+
+        // if (!isNaN(Number(dataTemp.estimated))) {
+        //     onHandleRate(dataTemp.estimated)
+        // }
+
+        if (dataTemp.table === "" || dataTemp.task === "" || dataTemp.target === "" || dataTemp.note === "" || dataTemp.rate === 0 || dataTemp.estimated === 0) {
+            // setErr(true)
+        } else {
             const count = list.length
             dataTemp.id = count + 1
             setList([...list, dataTemp])
@@ -146,21 +168,29 @@ const Home = () => {
     };
 
     const onHandleEstimated = (e) => {
-        if (e >= 0 && e <= 100) {
-            setDataTemp({ ...dataTemp, estimated: e })
-            setErr(false)
-        } else {
-            setErr(true)
+        if (!isNaN(Number(e))) {
+            if (e >= 0 && e <= 100) {
+                setDataTemp({ ...dataTemp, estimated: e })
+                setEstimated(e)
+                // setErr(false)
+            } else {
+                // setErr(true)
+            }
         }
     }
 
     const onHandleRate = (e) => {
-        if (e >= 0 && e <= 100) {
-            setDataTemp({ ...dataTemp, rate: e })
-            setErr(false)
-        } else {
-            setErr(true)
+
+        if (!isNaN(Number(e))) {
+            if (e >= 0 && e <= 100) {
+                setDataTemp({ ...dataTemp, rate: e })
+                setRate(e)
+                // setErr(false)
+            } else {
+                // setErr(true)
+            }
         }
+
     }
 
     const body = (
@@ -169,7 +199,22 @@ const Home = () => {
             <div id="simple-modal-description">
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
-                        <TextField onChange={(e) => setDataTemp({ ...dataTemp, table: e.target.value })} id="table" label="Tên Bảng" variant="outlined" />
+                        <FormControl className={classes.formControl}>
+                            <InputLabel id="demo-simple-select-label">Tên Bảng</InputLabel>
+                            <Select
+                                labelId="demo-simple-select-label"
+                                id="demo-simple-select"
+                                value={dataTemp.table}
+                                onChange={(e) => setDataTemp({ ...dataTemp, table: e.target.value })}
+                            >
+                                <MenuItem value="chatbot">Chat Bot</MenuItem>
+                                <MenuItem value="monitor">Monitoring System</MenuItem>
+                                <MenuItem value="idea &amp; Design">Idea &amp; Design</MenuItem>
+                                <MenuItem value="cicdsec">CI/CD Security</MenuItem>
+                                <MenuItem value="training">Training</MenuItem>
+                                <MenuItem value="blog">Blog</MenuItem>
+                            </Select>
+                        </FormControl>
                     </Grid>
                     <Grid item xs={12}>
                         <TextField onChange={(e) => setDataTemp({ ...dataTemp, task: e.target.value })} id="task" label="Task" variant="outlined" />
@@ -208,10 +253,27 @@ const Home = () => {
                         <TextField onChange={(e) => setDataTemp({ ...dataTemp, target: e.target.value })} id="target" label="Mục Tiêu" variant="outlined" />
                     </Grid>
                     <Grid item xs={12}>
-                        <TextField value={dataTemp.estimated === 0 ? "" : dataTemp.estimated} onChange={(e) => onHandleEstimated(e.target.value)} id="estimated" label="Hoàn Thành Dự Kiến" variant="outlined" type="number" />
+                        <TextField onChange={(e) => onHandleEstimated(e.target.value)}
+                            value={dataTemp.estimated === 0 ? estimated : dataTemp.estimated}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start">%</InputAdornment>,
+                            }}
+                            id="estimated" label="Hoàn Thành Dự Kiến"
+                            variant="outlined"
+                            inputProps={{ className: classes.input, pattern: "^(100|[0-9]{1,2})%?$" }}
+                        />
                     </Grid>
                     <Grid item xs={12}>
-                        <TextField value={dataTemp.rate === 0 ? "" : dataTemp.rate} onChange={(e) => onHandleRate(e.target.value)} id="rate" label="Hoàn Thành Thực Tế" variant="outlined" />
+                        <TextField
+                            value={dataTemp.rate === 0 ? rate : dataTemp.rate}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start">%</InputAdornment>,
+                            }}
+                            onChange={(e) => onHandleRate(e.target.value)}
+                            id="rate" variant="outlined"
+                            label="Hoàn Thành Thực Tế"
+                            inputProps={{ className: classes.input, pattern: "^(100|[0-9]{1,2})%?$" }}
+                        />
                     </Grid>
                     <Grid item xs={12}>
                         <TextField onChange={(e) => setDataTemp({ ...dataTemp, note: e.target.value })} id="note" label="Ghi Chú" variant="outlined" />
